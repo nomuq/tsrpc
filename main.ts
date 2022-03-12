@@ -6,15 +6,6 @@ project.addSourceFilesAtPaths(
   "/Users/satish/Desktop/satishbabariya/tsrpc/proto.ts"
 );
 
-// console.log(
-//   project
-//     .getSourceFiles()
-//     .map((file) => file.getInterfaces())
-//     .map((interfaces) =>
-//       interfaces.map((interfaceNode) => interfaceNode.getName())
-//     )
-// );
-
 export interface Service {}
 
 const interfaces = project.getSourceFiles()[0].getInterfaces();
