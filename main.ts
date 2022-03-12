@@ -1,4 +1,3 @@
-import { InterfaceDeclaration } from "@ts-morph/common/lib/typescript";
 import { Project } from "ts-morph";
 
 const project = new Project();
