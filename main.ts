@@ -19,17 +19,18 @@ interfaces.forEach((interfaceNode) => {
     if (extendsExpressionText === "Service") {
       // get all the methods from the service
       const methods = interfaceNode.getMethods();
-      // for each method
-      console.log(
-        methods.map((method) => {
-          return {
-            method: method.getName(),
-            params: method.getParameters().map((param) => param.getText()),
-            returnType: method.getReturnType().getText(),
-          };
-        })
-      );
+      // // for each method
+      // console.log(
+      //   methods.map((method) => {
+      //     return {
+      //       method: method.getName(),
+      //       params: method.getParameters().map((param) => param.getText()),
+      //       returnType: method.getReturnType().getText(),
+      //     };
+      //   })
+      // );
 
+      // Export Server
       const file = project.createSourceFile(
         "/Users/satish/Desktop/satishbabariya/tsrpc/generated/server.ts",
         "",
@@ -84,7 +85,76 @@ interfaces.forEach((interfaceNode) => {
         });
       });
 
+      file.formatText();
       file.saveSync();
+
+      // Export Client
+      const clientFile = project.createSourceFile(
+        "/Users/satish/Desktop/satishbabariya/tsrpc/generated/client.ts",
+        "",
+        { overwrite: true }
+      );
+
+      methods.forEach((method) => {
+        const returnType = method.getReturnType().getText();
+        const responseType = returnType
+          .replace("Promise<", "")
+          .replace(">", "");
+
+        // find the response type from interfaces
+        const responseInterface = interfaces.find(
+          (interfaceNode) => interfaceNode.getName() === responseType
+        );
+
+        if (responseInterface) {
+          clientFile.addInterface({
+            ...responseInterface.getStructure(),
+            isExported: true,
+          });
+        }
+
+        const parameters = method
+          .getParameters()
+          .map((param) => param.getStructure());
+
+        parameters.forEach((param) => {
+          const paramInterface = interfaces.find(
+            (interfaceNode) => interfaceNode.getName() === param.type
+          );
+
+          if (paramInterface) {
+            clientFile.addInterface({
+              ...paramInterface.getStructure(),
+              isExported: true,
+            });
+          }
+        });
+
+        clientFile.addFunction({
+          name: method.getName(),
+          parameters: parameters,
+          returnType: `Promise<${responseType}>`,
+          isAsync: true,
+          isExported: true,
+          statements: [
+            `return fetch("http://localhost:3000/rpc/${method.getName()}", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  request: {
+                    ${parameters.map((param) => param.name).join(", ")}
+                    }
+                    }),
+                    })
+                    .then(response => response.json())`,
+          ],
+        });
+      });
+
+      clientFile.formatText();
+      clientFile.saveSync();
     }
   }
 });
