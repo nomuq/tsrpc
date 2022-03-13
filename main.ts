@@ -29,6 +29,62 @@ interfaces.forEach((interfaceNode) => {
           };
         })
       );
+
+      const file = project.createSourceFile(
+        "/Users/satish/Desktop/satishbabariya/tsrpc/generated/server.ts",
+        "",
+        { overwrite: true }
+      );
+
+      const unimpl = file.addInterface({
+        name: `Unimplemented${interfaceNode.getName()}`,
+        isExported: true,
+      });
+
+      methods.forEach((method) => {
+        const returnType = method.getReturnType().getText();
+        const responseType = returnType
+          .replace("Promise<", "")
+          .replace(">", "");
+
+        // find the response type from interfaces
+        const responseInterface = interfaces.find(
+          (interfaceNode) => interfaceNode.getName() === responseType
+        );
+
+        // add the response type to the file
+        if (responseInterface) {
+          const responseInterfaceNode = file.addInterface({
+            ...responseInterface.getStructure(),
+            isExported: true,
+          });
+        }
+
+        const parameters = method
+          .getParameters()
+          .map((param) => param.getStructure());
+
+        parameters.forEach((param) => {
+          const paramInterface = interfaces.find(
+            (interfaceNode) => interfaceNode.getName() === param.type
+          );
+
+          if (paramInterface) {
+            const paramInterfaceNode = file.addInterface({
+              ...paramInterface.getStructure(),
+              isExported: true,
+            });
+          }
+        });
+
+        unimpl.addMethod({
+          name: method.getName(),
+          parameters: parameters,
+          returnType: `Promise<${responseType}>`,
+        });
+      });
+
+      file.saveSync();
     }
   }
 });
