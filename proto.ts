@@ -10,4 +10,5 @@ interface EchoResponse {
 
 interface EchoService extends Service {
   echo(request: EchoRequest): EchoResponse;
+  get(): EchoResponse;
 }
